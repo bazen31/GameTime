@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Мои брони — GameTime{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">ВАШИ СЕАНСЫ</p><h1>Мои брони</h1></div></div>
+{% if bookings %}
+  <div class="table-wrap card">
+    <table><thead><tr><th>Оборудование</th><th>Начало</th><th>Окончание</th><th>Статус</th><th>Стоимость</th><th></th></tr></thead>
+      <tbody>{% for booking in bookings %}
+      <tr>
+        <td>{{ booking.equipment_name }}<small>{{ booking.equipment_type }}</small></td>
+        <td>{{ booking.start_at|replace('T', ' ') }}</td><td>{{ booking.end_at|replace('T', ' ') }}</td>
+        <td><span class="status {{ booking.status }}">{{ status_labels[booking.status] }}</span></td>
+        <td>{{ booking.total_price|money }} ₸</td>
+        <td>{% if booking.status == 'confirmed' %}<form method="post" action="{{ url_for('cancel_booking', booking_id=booking.id) }}" onsubmit="return confirm('Отменить эту бронь?');"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-danger" type="submit">Отменить</button></form>{% endif %}</td>
+      </tr>
+      {% endfor %}</tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-state card"><h2>Броней пока нет</h2><p>Здесь появятся ваши будущие и завершённые сеансы.</p><a class="button primary" href="{{ url_for('equipment_list') }}">Выбрать оборудование</a></div>
+{% endif %}
+{% if pages > 1 %}<nav class="pagination">{% if page > 1 %}<a href="{{ url_for('my_bookings', page=page-1) }}">← Назад</a>{% endif %}<span>Страница {{ page }} из {{ pages }}</span>{% if page < pages %}<a href="{{ url_for('my_bookings', page=page+1) }}">Далее →</a>{% endif %}</nav>{% endif %}
+{% endblock %}

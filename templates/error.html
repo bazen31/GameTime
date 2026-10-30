@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ code }} — GameTime{% endblock %}
+{% block content %}
+<section class="empty-state card error-page">
+  <p class="eyebrow">ОШИБКА {{ code }}</p><h1>{{ code }}</h1><p>{{ message }}</p>
+  <a class="button primary" href="{{ url_for('index') }}">На главную</a>
+</section>
+{% endblock %}

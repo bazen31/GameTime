@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}{{ equipment.name }} — GameTime{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{{ url_for('equipment_list') }}">Оборудование</a> / {{ equipment.name }}</p>
+<div class="detail-grid">
+  <section class="card detail-card">
+    <p class="eyebrow">{{ equipment.equipment_type }} · {{ equipment.zone_name }}</p>
+    <h1>{{ equipment.name }}</h1>
+    <p>{{ equipment.specifications or 'Характеристики уточняются.' }}</p>
+    <div class="rate">{{ equipment.hourly_rate }} ₸ <span>/ час</span></div>
+    <h2>Занятые интервалы</h2>
+    <form class="date-filter" method="get">
+      <label for="date">Дата</label>
+      <input id="date" type="date" name="date" value="{{ selected_date }}" min="{{ today_value }}" required>
+      <button class="button secondary" type="submit">Показать</button>
+    </form>
+    {% if slots %}
+      <div id="busy-list"><ul class="busy-list">{% for slot in slots %}<li>{{ slot.start[11:16] }} — {{ slot.end[11:16] }}</li>{% endfor %}</ul></div>
+    {% else %}
+      <div id="busy-list"><p class="availability">На эту дату занятых интервалов нет.</p></div>
+    {% endif %}
+  </section>
+  <section class="card booking-card">
+    <p class="eyebrow">БРОНИРОВАНИЕ</p>
+    <h2>Выберите время</h2>
+    {% if current_user %}
+      {% if equipment.is_active %}
+      <form method="post" action="{{ url_for('create_booking') }}" id="booking-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="equipment_id" value="{{ equipment.id }}">
+        <label for="booking-date">Дата</label>
+        <input id="booking-date" type="date" name="date" value="{{ selected_date }}" min="{{ today_value }}" required>
+        <div class="form-row">
+          <label>Начало
+            <select name="start_time" id="start-time" required>
+              {% for value in time_options %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+            </select>
+          </label>
+          <label>Окончание
+            <select name="end_time" id="end-time" required>
+              {% for value in time_options %}<option value="{{ value }}">{{ value }}</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+        <p class="form-error" id="booking-error" role="alert"></p>
+        <div class="price-summary"><span>Итого</span><strong id="price-total">—</strong></div>
+        <button class="button primary full-width" type="submit">Подтвердить бронь</button>
+        <p class="hint">Минимум 30 минут. Шаг выбора — 30 минут. Время и тариф проверяются на сервере.</p>
+      </form>
+      {% else %}
+        <p class="notice error">Устройство сейчас отключено от бронирования.</p>
+      {% endif %}
+    {% else %}
+      <p>Чтобы забронировать время, войдите или создайте аккаунт.</p>
+      <a class="button primary" href="{{ url_for('login') }}">Войти</a>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+{% if current_user and equipment.is_active %}
+<script>
+(() => {
+  const form = document.getElementById("booking-form");
+  const date = document.getElementById("booking-date");
+  const start = document.getElementById("start-time");
+  const end = document.getElementById("end-time");
+  const error = document.getElementById("booking-error");
+  const total = document.getElementById("price-total");
+  const busyList = document.getElementById("busy-list");
+  const slotsUrl = {{ url_for("equipment_slots", equipment_id=equipment.id)|tojson }};
+  const rate = {{ equipment.hourly_rate|tojson }};
+  const busy = {{ slots|tojson }};
+  const allTimes = {{ time_options|tojson }};
+  const today = {{ today_value|tojson }};
+  const currentMinute = {{ current_minute|tojson }};
+  let loadedDate = date.value;
+  const timeMinutes = value => {
+    const [hour, minute] = value.split(":").map(Number);
+    return hour * 60 + minute;
+  };
+  const slotStart = value => timeMinutes(value.slice(11, 16));
+  const refreshTimes = () => {
+    const options = allTimes.filter(value => date.value !== today || timeMinutes(value) > currentMinute);
+    [start, end].forEach(select => {
+      const previous = select.value;
+      select.replaceChildren();
+      options.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+      if (options.includes(previous)) select.value = previous;
+    });
+  };
+  const update = () => {
+    if (loadedDate !== date.value) {
+      error.textContent = "Загружается доступность для выбранной даты.";
+      total.textContent = "—";
+      return false;
+    }
+    if (!start.value || !end.value) {
+      error.textContent = "На выбранную дату нет доступных временных интервалов.";
+      total.textContent = "—";
+      return false;
+    }
+    const begin = start.value.split(":").map(Number);
+    const finish = end.value.split(":").map(Number);
+    const startMinute = begin[0] * 60 + begin[1];
+    const endMinute = finish[0] * 60 + finish[1];
+    const overlaps = busy.some(item =>
+      item.start.slice(0, 10) === date.value &&
+      startMinute < slotStart(item.end) && endMinute > slotStart(item.start)
+    );
+    const invalid = endMinute <= startMinute || overlaps;
+    error.textContent = overlaps ? "Интервал пересекается с уже занятой бронью." :
+      (endMinute <= startMinute ? "Окончание должно быть позже начала." : "");
+    total.textContent = invalid ? "—" : `${(rate * (endMinute - startMinute) / 60).toLocaleString("ru-RU")} ₸`;
+    return !invalid;
+  };
+  form.addEventListener("submit", event => {
+    if (!update()) event.preventDefault();
+  });
+  date.addEventListener("change", async () => {
+    refreshTimes();
+    loadedDate = "";
+    update();
+    try {
+      const response = await fetch(`${slotsUrl}?date=${encodeURIComponent(date.value)}`);
+      if (!response.ok) throw new Error("Не удалось загрузить доступность.");
+      const data = await response.json();
+      busy.splice(0, busy.length, ...data.slots);
+      loadedDate = date.value;
+      busyList.replaceChildren();
+      if (busy.length) {
+        const list = document.createElement("ul");
+        list.className = "busy-list";
+        busy.forEach(item => {
+          const li = document.createElement("li");
+          li.textContent = `${item.start.slice(11, 16)} — ${item.end.slice(11, 16)}`;
+          list.appendChild(li);
+        });
+        busyList.appendChild(list);
+      } else {
+        const message = document.createElement("p");
+        message.className = "availability";
+        message.textContent = "На эту дату занятых интервалов нет.";
+        busyList.appendChild(message);
+      }
+      update();
+    } catch (fetchError) {
+      error.textContent = fetchError.message;
+    }
+  });
+  [start, end].forEach(input => input.addEventListener("change", update));
+  refreshTimes();
+  update();
+})();
+</script>
+{% endif %}
+{% endblock %}

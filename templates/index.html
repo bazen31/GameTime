@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}GameTime — игровой клуб{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">ИГРОВОЙ КЛУБ</p>
+    <h1>Твоя игра.<br>Твоё время.</h1>
+    <p>Выбирай компьютер или консоль, смотри свободные интервалы и бронируй онлайн.</p>
+    <a class="button primary" href="{{ url_for('equipment_list') }}">Выбрать оборудование</a>
+  </div>
+  <div class="hero-panel">
+    <span class="pulse"></span>
+    <strong>{{ equipment_count }} устройств</strong>
+    <span>доступны для бронирования</span>
+  </div>
+</section>
+<section class="home-info">
+  <article class="card">
+    <p class="eyebrow">АДРЕС</p>
+    <h2>GameTime</h2>
+    <p>{{ settings.address }}</p>
+  </article>
+  <article class="card">
+    <p class="eyebrow">ЧАСЫ РАБОТЫ</p>
+    <h2>{{ settings.opening_time }} — {{ settings.closing_time }}</h2>
+    <p>Часовой пояс: {{ settings.timezone }}.</p>
+  </article>
+</section>
+{% endblock %}

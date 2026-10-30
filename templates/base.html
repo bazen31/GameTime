@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}GameTime{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}">GameTime</a>
+    <nav aria-label="Основная навигация">
+      <a href="{{ url_for('equipment_list') }}">Оборудование</a>
+      {% if current_user %}
+        <a href="{{ url_for('my_bookings') }}">Мои брони</a>
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('admin_dashboard') }}">Панель клуба</a>
+        {% endif %}
+        <a href="{{ url_for('profile') }}">{{ current_user.name }}</a>
+        <form class="inline-form" method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="link-button" type="submit">Выйти</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Войти</a>
+        <a class="nav-cta" href="{{ url_for('register') }}">Регистрация</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="notices" aria-live="polite">
+          {% for category, message in messages %}
+            <p class="notice {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">GameTime · бронирование игрового клуба</footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

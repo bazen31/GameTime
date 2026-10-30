@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Оборудование — GameTime{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">КАТАЛОГ</p><h1>Оборудование</h1></div>
+  <span class="muted">Выберите устройство, чтобы посмотреть расписание</span>
+</div>
+<form class="filters card" method="get">
+  <label>Тип
+    <select name="type">
+      <option value="">Все типы</option>
+      <option value="PC" {% if selected_type == 'PC' %}selected{% endif %}>PC</option>
+      <option value="console" {% if selected_type == 'console' %}selected{% endif %}>Консоли</option>
+    </select>
+  </label>
+  <label>Зона
+    <select name="zone">
+      <option value="">Все зоны</option>
+      {% for zone in zones %}<option value="{{ zone.id }}" {% if selected_zone == zone.id|string %}selected{% endif %}>{{ zone.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Дата доступности<input type="date" name="date" value="{{ selected_date }}" required></label>
+  <button class="button secondary" type="submit">Применить фильтры</button>
+</form>
+{% if equipment %}
+  <div class="device-grid">
+    {% for item in equipment %}
+      <article class="device-card card">
+        <div class="device-symbol">{{ 'PC' if item.equipment_type == 'PC' else '🎮' }}</div>
+        <div class="device-type">{{ 'КОМПЬЮТЕР' if item.equipment_type == 'PC' else 'КОНСОЛЬ' }} · {{ item.zone_name }}</div>
+        <h2>{{ item.name }}</h2>
+        <p>{{ item.specifications or 'Характеристики уточняются.' }}</p>
+        <p class="availability">{% if availability[item.id] %}Занято: {% for interval in availability[item.id] %}{{ interval.start[11:16] }}–{{ interval.end[11:16] }}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}В этот день пока свободно{% endif %}</p>
+        <div class="device-footer"><strong>{{ item.hourly_rate }} ₸ <small>/ час</small></strong><a class="button secondary" href="{{ url_for('equipment_detail', equipment_id=item.id, date=selected_date) }}">Расписание</a></div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state card"><h2>Ничего не найдено</h2><p>Попробуйте изменить фильтры.</p></div>
+{% endif %}
+{% if pages > 1 %}
+  <nav class="pagination" aria-label="Страницы">
+    {% if page > 1 %}<a href="{{ url_for('equipment_list', page=page-1, type=selected_type, zone=selected_zone, date=selected_date) }}">← Назад</a>{% endif %}
+    <span>Страница {{ page }} из {{ pages }}</span>
+    {% if page < pages %}<a href="{{ url_for('equipment_list', page=page+1, type=selected_type, zone=selected_zone, date=selected_date) }}">Далее →</a>{% endif %}
+  </nav>
+{% endif %}
+{% endblock %}

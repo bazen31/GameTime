@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Настройки клуба — GameTime{% endblock %}
+{% block content %}
+<section class="auth-card card">
+  <p class="eyebrow">КЛУБ</p><h1>Настройки клуба</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Адрес<input name="address" maxlength="240" value="{{ request.form.get('address', settings.address) }}" required></label>
+    {% if errors.get('address') %}<p class="form-error">{{ errors.address }}</p>{% endif %}
+    <div class="form-row">
+      <label>Открытие<input type="time" name="opening_time" value="{{ request.form.get('opening_time', settings.opening_time) }}" required></label>
+      <label>Закрытие<input type="time" name="closing_time" value="{{ request.form.get('closing_time', settings.closing_time) }}" required></label>
+    </div>
+    {% if errors.get('opening_time') %}<p class="form-error">{{ errors.opening_time }}</p>{% endif %}{% if errors.get('closing_time') %}<p class="form-error">{{ errors.closing_time }}</p>{% endif %}
+    <label>Часовой пояс (IANA)<input name="timezone" value="{{ request.form.get('timezone', settings.timezone) }}" placeholder="Asia/Almaty" required></label>
+    {% if errors.get('timezone') %}<p class="form-error">{{ errors.timezone }}</p>{% endif %}
+    <p class="hint">Задаётся один ежедневный интервал. Закрытие должно быть позже открытия, переход через полночь не поддерживается.</p>
+    <button class="button primary" type="submit">Сохранить настройки</button>
+  </form>
+</section>
+{% endblock %}

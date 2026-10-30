@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Изменить' if equipment else 'Добавить' }} оборудование — GameTime{% endblock %}
+{% block content %}
+<section class="auth-card wide card">
+  <p class="eyebrow">КАТАЛОГ</p><h1>{{ 'Изменить оборудование' if equipment else 'Новое оборудование' }}</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Название<input name="name" maxlength="120" value="{{ values.get('name', '') }}" required></label>{% if errors.get('name') %}<p class="form-error">{{ errors.name }}</p>{% endif %}
+    <div class="form-row">
+      <label>Тип<select name="equipment_type" required><option value="">Выберите</option><option value="PC" {% if values.get('equipment_type') == 'PC' %}selected{% endif %}>PC</option><option value="console" {% if values.get('equipment_type') == 'console' %}selected{% endif %}>Консоль</option></select></label>
+      <label>Зона<select name="zone_id" required><option value="">Выберите</option>{% for zone in zones %}<option value="{{ zone.id }}" {% if values.get('zone_id')|int == zone.id %}selected{% endif %}>{{ zone.name }}</option>{% endfor %}</select></label>
+    </div>
+    {% if errors.get('equipment_type') %}<p class="form-error">{{ errors.equipment_type }}</p>{% endif %}{% if errors.get('zone_id') %}<p class="form-error">{{ errors.zone_id }}</p>{% endif %}
+    <label>Характеристики<textarea name="specifications" rows="3">{{ values.get('specifications', '') }}</textarea></label>
+    <label>Стоимость за час, ₸<input type="number" min="0" step="1" name="hourly_rate" value="{{ values.get('hourly_rate', '') }}" required></label>{% if errors.get('hourly_rate') %}<p class="form-error">{{ errors.hourly_rate }}</p>{% endif %}
+    <label class="checkbox-label"><input type="checkbox" name="is_active" value="1" {% if not equipment or values.get('is_active') %}checked{% endif %}> Доступно для бронирования</label>
+    <button class="button primary" type="submit">Сохранить</button>
+  </form>
+</section>
+{% endblock %}

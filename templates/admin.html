@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Панель клуба — GameTime{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">УПРАВЛЕНИЕ КЛУБОМ</p><h1>Панель клуба</h1></div>
+  <div class="toolbar"><a class="button secondary" href="{{ url_for('utilization_report') }}">Отчёт</a><a class="button secondary" href="{{ url_for('add_equipment') }}">+ Оборудование</a><a class="button secondary" href="{{ url_for('edit_settings') }}">Настройки клуба</a></div>
+</div>
+<section class="card admin-filter">
+  <form method="get" class="filters compact">
+    <label>Дата<input type="date" name="date" value="{{ date_value }}"></label>
+    <label>Статус<select name="status"><option value="">Все статусы</option>{% for key, label in status_labels.items() %}<option value="{{ key }}" {% if status_filter == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <button class="button secondary" type="submit">Показать</button>
+  </form>
+  <p class="stat-line">Занято часов за день: <strong>{{ occupied_hours }}</strong></p>
+</section>
+{% if bookings %}
+<div class="table-wrap card">
+  <table><thead><tr><th>Время</th><th>Устройство</th><th>Клиент</th><th>Статус</th><th>Сумма</th><th>Действия</th></tr></thead>
+  <tbody>{% for booking in bookings %}
+    <tr>
+      <td>{{ booking.start_at[11:16] }}–{{ booking.end_at[11:16] }}</td><td>{{ booking.equipment_name }}</td>
+      <td>{{ booking.customer_name }}</td><td><span class="status {{ booking.status }}">{{ status_labels[booking.status] }}</span></td>
+      <td>{{ booking.total_price|money }} ₸</td><td class="actions">
+        {% if booking.status == 'confirmed' %}
+        <form method="post" action="{{ url_for('start_booking', booking_id=booking.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Начать</button></form>
+        <form method="post" action="{{ url_for('mark_no_show', booking_id=booking.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Неявка</button></form>
+        {% elif booking.status == 'running' %}
+        <form method="post" action="{{ url_for('finish_booking', booking_id=booking.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Завершить</button></form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}</tbody></table>
+</div>
+{% else %}<div class="empty-state card"><h2>На выбранную дату броней нет</h2></div>{% endif %}
+{% if pages > 1 %}<nav class="pagination">{% if page > 1 %}<a href="{{ url_for('admin_dashboard', page=page-1, date=date_value, status=status_filter) }}">← Назад</a>{% endif %}<span>Страница {{ page }} из {{ pages }}</span>{% if page < pages %}<a href="{{ url_for('admin_dashboard', page=page+1, date=date_value, status=status_filter) }}">Далее →</a>{% endif %}</nav>{% endif %}
+<section class="card user-admin">
+  <div class="page-heading"><div><p class="eyebrow">ДОСТУПЫ</p><h2>Пользователи и роли</h2></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Назначить</th></tr></thead><tbody>
+    {% for user in users %}<tr><td>{{ user.name }}</td><td>{{ user.email }}</td><td>{{ 'Администратор' if user.role == 'admin' else 'Клиент' }}</td><td>
+      <form class="role-form" method="post" action="{{ url_for('set_user_role', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="role"><option value="customer" {% if user.role == 'customer' %}selected{% endif %}>Клиент</option><option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Администратор</option></select><button type="submit">Сохранить</button></form>
+    </td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+<section class="card user-admin">
+  <div class="page-heading"><div><p class="eyebrow">КАТАЛОГ</p><h2>Управление оборудованием</h2></div></div>
+  <div class="table-wrap"><table><thead><tr><th>Название</th><th>Тип</th><th>Зона</th><th>Тариф</th><th>Активность</th><th></th></tr></thead><tbody>
+  {% for item in all_equipment %}<tr><td>{{ item.name }}</td><td>{{ item.equipment_type }}</td><td>{{ item.zone_name }}</td><td>{{ item.hourly_rate }} ₸</td><td>{{ 'Активно' if item.is_active else 'Отключено' }}</td><td><a href="{{ url_for('edit_equipment', equipment_id=item.id) }}">Изменить</a></td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

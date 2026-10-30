@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — GameTime{% endblock %}
+{% block content %}
+<section class="auth-card card">
+  <p class="eyebrow">СОЗДАЙТЕ АККАУНТ</p><h1>Регистрация</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Имя<input name="name" value="{{ request.form.get('name', '') }}" maxlength="120" autocomplete="name" required></label>
+    {% if errors.get('name') %}<p class="form-error">{{ errors.name }}</p>{% endif %}
+    <label>Email<input type="email" name="email" value="{{ request.form.get('email', '') }}" autocomplete="email" required></label>
+    {% if errors.get('email') %}<p class="form-error">{{ errors.email }}</p>{% endif %}
+    <label>Пароль<input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+    {% if errors.get('password') %}<p class="form-error">{{ errors.password }}</p>{% endif %}
+    <button class="button primary full-width" type="submit">Создать аккаунт</button>
+  </form>
+  <p class="muted">Уже есть аккаунт? <a href="{{ url_for('login') }}">Войти</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Вход — GameTime{% endblock %}
+{% block content %}
+<section class="auth-card card">
+  <p class="eyebrow">С РАДОСТЬЮ ВИДИМ СНОВА</p><h1>Вход</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Email<input type="email" name="email" value="{{ request.form.get('email', '') }}" autocomplete="email" required></label>
+    {% if errors.get('email') %}<p class="form-error">{{ errors.email }}</p>{% endif %}
+    <label>Пароль<input type="password" name="password" autocomplete="current-password" required></label>
+    <button class="button primary full-width" type="submit">Войти</button>
+  </form>
+  <p class="muted">Нет аккаунта? <a href="{{ url_for('register') }}">Зарегистрироваться</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Отчёт — GameTime{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">АНАЛИТИКА</p><h1>Загрузка и выручка</h1></div></div>
+<form class="filters card" method="get">
+  <label>С<input type="date" name="from" value="{{ start_value }}" required></label>
+  <label>По<input type="date" name="to" value="{{ end_value }}" required></label>
+  <button class="button secondary" type="submit">Сформировать</button>
+</form>
+<section class="stats-grid">
+  <article class="card stat-card"><span>Занятые часы</span><strong>{{ occupied_hours }}</strong><small>Подтверждённые и идущие сеансы</small></article>
+  <article class="card stat-card"><span>Завершённые часы</span><strong>{{ '%.2f'|format(completed.hours) }}</strong><small>{{ completed.count }} завершённых сеансов</small></article>
+  <article class="card stat-card"><span>Сумма завершённых сеансов</span><strong>{{ completed.revenue|money }} ₸</strong><small>Стоимость из снимка брони</small></article>
+</section>
+{% endblock %}
